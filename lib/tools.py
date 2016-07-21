@@ -66,31 +66,31 @@ class Tools():
         lurl = url.split('/')
         host = lurl[2]
         purl = '/' + '/'.join(lurl[3:])
+        if username and password:
+            headers['Authorization'] = ('Basic '.encode() + base64.b64encode((username + ':' + password).encode()))
         if plain:
             conn = http.client.HTTPConnection(host, timeout=timeout)
         else:
             conn = http.client.HTTPSConnection(host, timeout=timeout)
-        if username and password:
-            headers['Authorization'] = ('Basic '.encode() + base64.b64encode((username + ':' + password).encode()))
         try:
-            conn.request(method, purl, body, headers)
-        except Exception as e:
-            if format(e) in connErrors:
-                # diese fehler bekommen einen status, der in der visu oder sonst genutzt werden kann
-                if errorItem != None:
-                    errorItem(True,'_fetch_url')
-            if warn_no_connect == 1:
-                logger.warning("Problem fetching {0}: {1}".format(url, e))
+            try:
+                conn.request(method, purl, body, headers)
+            except Exception as e:
+                if format(e) in connErrors:
+                    # diese fehler bekommen einen status, der in der visu oder sonst genutzt werden kann
+                    if errorItem != None:
+                        errorItem(True,'_fetch_url')
+                if warn_no_connect == 1:
+                    logger.warning("Problem fetching {0}: {1}".format(url, e))
+                return None
+            resp = conn.getresponse()
+            if resp.status == 200:
+                return resp.read()
+            else:
+                logger.warning("Problem fetching {0}: {1} {2}".format(url, resp.status, resp.reason))
+                return None
+        finally:
             conn.close()
-            return False
-        resp = conn.getresponse()
-        if resp.status == 200:
-            content = resp.read()
-        else:
-            logger.warning("Problem fetching {0}: {1} {2}".format(url, resp.status, resp.reason))
-            content = False
-        conn.close()
-        return content
 
     def rel2abs(self, t, rf):
         t += 273.15
