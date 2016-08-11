@@ -39,9 +39,17 @@ editor.setOptions({
 var shCompleter = {
     getCompletions: function(editor, session, pos, prefix, callback) {
         var fullPrefix = new RegExp(/[\w\.]+$/).exec(editor.getValue().split("\n")[pos.row].substring(0,pos.column))[0];
-        var wordList = [];
+        //var wordList = [];
         if(fullPrefix.startsWith("sh.tools."))
           var wordList = ["ping(", "dewpoint(", "dt2js(", "dt2ts(", "fetch_url(", "rel2abs(", "runtime(" ];
+        else if(fullPrefix.startsWith("sh.log."))
+          var wordList = ["" ];
+        else if(fullPrefix.startsWith("sh.scheduler."))
+          var wordList = ["run()", "stop()", "trigger(", "remove(", "return_next(", "add(", "get(", "change("];
+        else if(fullPrefix.startsWith("sh.sun."))
+          var wordList = ["" ];
+        else if(fullPrefix.startsWith("sh.moon."))
+          var wordList = ["" ];
         else if(fullPrefix.startsWith("sh."))
           var wordList = ["add_item(", "return_item(", "return_items()", "match_items(", "find_children(", "return_plugins(", "return_logic(", "return_logics()", "scheduler.", "sun.", "moon.", "tools.", "log." ];
         else
@@ -72,19 +80,20 @@ function getTree() {
         var items_flat = flatten_item_tree(items);
         */
         // make flt array of items full paths
-        var items_flat = []
-        var flatten_item_tree = function(items) {
+        
+        var flatten_item_tree = function(items, items_flat) {
             $.each(items, function(index, element) {
                 items_flat.push(element.path);
-                flatten_item_tree(element.nodes);
+                flatten_item_tree(element.nodes, items_flat);
             });
         }
-        flatten_item_tree(items);
+        var items_flat = []
+        flatten_item_tree(items, items_flat);
         
         var shItemCompleter = {
             getCompletions: function(editor, session, pos, prefix, callback) {
                 var prePrefix = new RegExp(/([\w\.]+?)(\.[\w]*)?$/).exec(editor.getValue().split("\n")[pos.row].substring(0,pos.column))[1]+'.';
-                var wordList = items_flat.filter(function(itemPath) { itemPath.startsWith(prePrefix) });
+                var wordList = items_flat.filter(function(itemPath) { return itemPath.startsWith(prePrefix) && itemPath.substr(prePrefix.length).indexOf(".") == -1 });
                 callback(null, wordList.map(function(word) {
                     return {
                         caption: word,
