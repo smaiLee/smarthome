@@ -11,12 +11,37 @@
     li.L5, li.L6, li.L7, li.L8
     { list-style-type: decimal !important }
     </style>
-	<div class="container" style="width: 90%;">
+    <div class="container" style="width: 90%;">
     <h3>SmarthomeNG {{ _('Logik') }}:</h3>
         {{ file_path }}<br/><br/>
     </div>
+    <div class="container">
+    {% if logic_lines %}
+        <div id="editor" style="max-height: 700px;">{% for line in logic_lines %}{{ line }}{% endfor %}</div>
+    {% else %}{{ _('no data available') }}{% endif %}
+    </div class="container">
+    
     <div class="container"><pre class="prettyprint lang-py linenums" style="max-height: 700px;">{% if logic_lines %}
 {% for line in logic_lines %}{{ line }}
 {% endfor %}{% else %}{{ _('no data available') }}{% endif %}</pre></div>
+
+<script type="text/javascript" language="javascript">
+function getTree() {
+    $.getJSON('/items_json.html', function(result) {
+        $.each(result, function(index, element) {
+            item_tree.push(build_item_subtree_recursive(element));
+        });
+        $('#tree').treeview({
+            data: item_tree,
+			levels: 1,
+            showTags: true,
+            onNodeSelected: function(event, data) {
+                reload(data)
+            }
+        });
+    });
+}
+getTree();
+</script>
 {% endblock %}
 
