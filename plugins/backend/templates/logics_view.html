@@ -26,19 +26,73 @@
 {% endfor %}{% else %}{{ _('no data available') }}{% endif %}</pre></div>
 
 <script type="text/javascript" language="javascript">
+ace.require("ace/ext/language_tools");
+var editor = ace.edit("editor");
+editor.setTheme("ace/theme/chrome");
+editor.getSession().setMode("ace/mode/python");
+editor.setOptions({
+    enableBasicAutocompletion: true,
+    enableSnippets: true
+});
+var shCompleter = {
+    getCompletions: function(editor, session, pos, prefix, callback) {
+        var fullPrefix = new RegExp(/[\w\.]+$/).exec(editor.getValue().split("\n")[pos.row].substring(0,pos.column))[0];
+        var wordList = [];
+        if(fullPrefix.startsWith("sh.tools."))
+          var wordList = ["ping(", "dewpoint(", "dt2js(", "dt2ts(", "fetch_url(", "rel2abs(", "runtime(" ];
+        else if(fullPrefix.startsWith("sh."))
+          var wordList = ["add_item(", "return_item(", "return_items()", "match_items(", "find_children(", "return_plugins(", "return_logic(", "return_logics()", "scheduler.", "sun.", "moon.", "tools.", "log." ];
+        else
+          var wordList = ["sh."];
+        
+        callback(null, wordList.map(function(word) {
+            return {
+                caption: word,
+                value: word,
+                meta: "SH.py"
+            };
+        }));
+
+    }
+}
+editor.completers.push(shCompleter);        
+
 function getTree() {
-    $.getJSON('/items_json.html', function(result) {
-        $.each(result, function(index, element) {
-            item_tree.push(build_item_subtree_recursive(element));
-        });
-        $('#tree').treeview({
-            data: item_tree,
-			levels: 1,
-            showTags: true,
-            onNodeSelected: function(event, data) {
-                reload(data)
+    $.getJSON('/items_json.html', function(items) {
+        /*
+        var flatten_item_tree = function(items) {
+            $.each(items, function(index, element) {
+                var result = [element.path];
+                result.concat(flatten_item_tree(element.nodes));
+            });
+            return result;
+        }
+        var items_flat = flatten_item_tree(items);
+        */
+        // make flt array of items full paths
+        var items_flat = []
+        var flatten_item_tree = function(items) {
+            $.each(items, function(index, element) {
+                items_flat.push(element.path);
+                flatten_item_tree(element.nodes);
+            });
+        }
+        flatten_item_tree(items);
+        
+        var shItemCompleter = {
+            getCompletions: function(editor, session, pos, prefix, callback) {
+                var prePrefix = new RegExp(/([\w\.]+?)(\.[\w]*)?$/).exec(editor.getValue().split("\n")[pos.row].substring(0,pos.column))[1]+'.';
+                var wordList = items_flat.filter(function(itemPath) { itemPath.startsWith(prePrefix) });
+                callback(null, wordList.map(function(word) {
+                    return {
+                        caption: word,
+                        value: word,
+                        meta: "Item"
+                    };
+                }));
             }
-        });
+        }
+        editor.completers.push(shItemCompleter);
     });
 }
 getTree();
