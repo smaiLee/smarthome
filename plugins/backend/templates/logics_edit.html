@@ -15,7 +15,9 @@
     <h3>SmarthomeNG {{ _('Logik') }}:</h3>
         {{ file_path }}<br/><br/>
     </div>
-    <div class="container"><div od="editor" style="max-height: 700px;">{% if logic_lines %}
-{% for line in logic_lines %}{{ line }}
-{% endfor %}{% else %}{{ _('no data available') }}{% endif %}</div></div>
+    <div class="container">
+    {% if logic_lines %}
+        <div od="editor" style="max-height: 700px;">{% for line in logic_lines %}{{ line }}{% endfor %}</div>
+    {% else %}{{ _('no data available') }}{% endif %}
+    </div>
 {% endblock %}
