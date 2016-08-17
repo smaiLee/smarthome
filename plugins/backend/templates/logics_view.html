@@ -26,7 +26,6 @@
 {% for line in logic_lines %}{{ line }}
 {% endfor %}{% else %}{{ _('no data available') }}{% endif %}</pre></div>
 -->
-<script src="//cdn.jsdelivr.net/jquery/3.1.0/jquery.min.js"></script>
 <script src="//cdn.jsdelivr.net/ace/1.2.4/noconflict/ace.js" type="text/javascript" charset="utf-8"></script>
 <script src="//cdn.jsdelivr.net/ace/1.2.4/noconflict/ext-language_tools.js" type="text/javascript" charset="utf-8"></script>
 <script type="text/javascript" language="javascript">
@@ -70,46 +69,43 @@ var shCompleter = {
 }
 editor.completers.push(shCompleter);        
 
-function getTree() {
-    $.getJSON('/items_json.html', function(items) {
-        /*
-        var flatten_item_tree = function(items) {
-            $.each(items, function(index, element) {
-                var result = [element.path];
-                result.concat(flatten_item_tree(element.nodes));
-            });
-            return result;
-        }
-        var items_flat = flatten_item_tree(items);
-        */
-        // make flt array of items full paths
-        
-        var flatten_item_tree = function(items, items_flat) {
-            $.each(items, function(index, element) {
-                items_flat.push(element.path);
-                flatten_item_tree(element.nodes, items_flat);
-            });
-        }
-        var items_flat = []
-        flatten_item_tree(items, items_flat);
-        
-        var shItemCompleter = {
-            getCompletions: function(editor, session, pos, prefix, callback) {
-                var prePrefix = new RegExp(/([\w\.]+?)(\.[\w]*)?$/).exec(editor.getValue().split("\n")[pos.row].substring(0,pos.column))[1]+'.';
-                var wordList = items_flat.filter(function(itemPath) { return itemPath.startsWith(prePrefix) && itemPath.substr(prePrefix.length).indexOf(".") == -1 });
-                callback(null, wordList.map(function(word) {
-                    return {
-                        caption: word,
-                        value: word,
-                        meta: "Item"
-                    };
-                }));
+// Get Items asynch
+{
+    var xhr = new XMLHttpRequest();
+    xhr.onreadystatechange = function() {
+        if (xhr.readyState === XMLHttpRequest.DONE) {
+            if (xhr.status === 200) {
+                var items = JSON.parse(xhr.responseText);
+	        var flatten_item_tree = function(items, items_flat) {
+	            while(items.length > 0)
+	            	var element = items.pop();
+	                items_flat.push(element.path);
+	                flatten_item_tree(element.nodes, items_flat);
+	            });
+	        }
+	        var items_flat = []
+	        flatten_item_tree(items, items_flat);
+	        
+	        var shItemCompleter = {
+	            getCompletions: function(editor, session, pos, prefix, callback) {
+	                var prePrefix = new RegExp(/([\w\.]+?)(\.[\w]*)?$/).exec(editor.getValue().split("\n")[pos.row].substring(0,pos.column))[1]+'.';
+	                var wordList = items_flat.filter(function(itemPath) { return itemPath.startsWith(prePrefix) && itemPath.substr(prePrefix.length).indexOf(".") == -1 });
+	                callback(null, wordList.map(function(word) {
+	                    return {
+	                        caption: word,
+	                        value: word,
+	                        meta: "Item"
+	                    };
+	                }));
+	            }
+	        }
+	        editor.completers.push(shItemCompleter);
             }
         }
-        editor.completers.push(shItemCompleter);
-    });
+    };
+    xhr.open("GET", path, true);
+    xhr.send();
 }
-getTree();
 </script>
 {% endblock %}
 
